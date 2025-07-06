@@ -1,130 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Interactive Fractal Tree</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #000;
-            font-family: sans-serif;
-        }
-        canvas {
-            display: block;
-        }
-        #controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            color: white;
-        }
-        #controls label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        #controls input {
-            width: 100%;
-            margin-bottom: 10px;
-        }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #000;
+        font-family: sans-serif;
+      }
+      canvas {
+        display: block;
+      }
+      #controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 10px;
+        color: white;
+      }
+      #controls label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      #controls input {
+        width: 100%;
+        margin-bottom: 10px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <!-- 사용자 조작을 위한 컨트롤 패널 -->
     <div id="controls">
-        <label for="depth">가지 세밀도 (Depth)</label>
-        <input type="range" id="depth" min="1" max="13" value="10">
-        
-        <label for="angle">가지 각도 (Angle)</label>
-        <input type="range" id="angle" min="5" max="60" value="25">
-        
-        <label for="randomness">무작위성 (Randomness)</label>
-        <input type="range" id="randomness" min="0" max="50" value="10">
+      <label for="depth">가지 세밀도 (Depth)</label>
+      <input type="range" id="depth" min="1" max="13" value="10" />
 
-        <label for="trunkColor">줄기 색 (Trunk Color)</label>
-        <input type="color" id="trunkColor" value="#8B4513">
+      <label for="angle">가지 각도 (Angle)</label>
+      <input type="range" id="angle" min="5" max="60" value="25" />
 
-        <label for="leafColor">잎 색 (Leaf Color)</label>
-        <input type="color" id="leafColor" value="#228B22">
+      <label for="randomness">무작위성 (Randomness)</label>
+      <input type="range" id="randomness" min="0" max="50" value="10" />
+
+      <label for="trunkColor">줄기 색 (Trunk Color)</label>
+      <input type="color" id="trunkColor" value="#8B4513" />
+
+      <label for="leafColor">잎 색 (Leaf Color)</label>
+      <input type="color" id="leafColor" value="#228B22" />
     </div>
 
+    <!-- 프랙탈 트리를 그릴 캔버스 -->
     <canvas id="canvas"></canvas>
 
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+      // 캔버스와 2D 컨텍스트 가져오기
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
 
-        const depthSlider = document.getElementById('depth');
-        const angleSlider = document.getElementById('angle');
-        const randomnessSlider = document.getElementById('randomness');
-        const trunkColorPicker = document.getElementById('trunkColor');
-        const leafColorPicker = document.getElementById('leafColor');
+      // 각 컨트롤 요소 가져오기
+      const depthSlider = document.getElementById("depth");
+      const angleSlider = document.getElementById("angle");
+      const randomnessSlider = document.getElementById("randomness");
+      const trunkColorPicker = document.getElementById("trunkColor");
+      const leafColorPicker = document.getElementById("leafColor");
 
-        function drawTree() {
-            // 1. 현재 설정 값들을 가져오기
-            const maxDepth = parseInt(depthSlider.value);
-            const baseAngle = parseInt(angleSlider.value);
-            const randomness = parseInt(randomnessSlider.value) / 100; // 0 ~ 0.5 범위로 변환
-            const trunkColor = trunkColorPicker.value;
-            const leafColor = leafColorPicker.value;
+      // 트리 전체를 그리는 함수
+      function drawTree() {
+        // 1. 현재 설정 값들을 가져오기
+        const maxDepth = parseInt(depthSlider.value); // 가지의 최대 깊이
+        const baseAngle = parseInt(angleSlider.value); // 기본 가지 각도
+        const randomness = parseInt(randomnessSlider.value) / 100; // 무작위성 (0~0.5)
+        const trunkColor = trunkColorPicker.value; // 줄기 색상
+        const leafColor = leafColorPicker.value; // 잎 색상
 
-            // 2. 캔버스 크기 조절 및 초기화
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 2. 캔버스 크기 조절 및 초기화
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 3. 나무 그리기 시작
-            const startX = canvas.width / 2;
-            const startY = canvas.height;
-            
-            drawBranch(startX, startY, -90, maxDepth, maxDepth, baseAngle, randomness, trunkColor, leafColor);
+        // 3. 나무 그리기 시작 (화면 하단 중앙에서 위로)
+        const startX = canvas.width / 2;
+        const startY = canvas.height;
+
+        // 첫 번째(루트) 가지 그리기
+        drawBranch(
+          startX,
+          startY,
+          -90,
+          maxDepth,
+          maxDepth,
+          baseAngle,
+          randomness,
+          trunkColor,
+          leafColor
+        );
+      }
+
+      // 재귀적으로 가지를 그리는 함수
+      // x1, y1: 시작점 좌표
+      // angle: 현재 가지의 각도(도 단위)
+      // currentDepth: 현재 깊이
+      // maxDepth: 최대 깊이(초기값)
+      // baseAngle: 기본 가지 각도
+      // randomness: 무작위성 비율
+      // trunkColor, leafColor: 색상
+      function drawBranch(
+        x1,
+        y1,
+        angle,
+        currentDepth,
+        maxDepth,
+        baseAngle,
+        randomness,
+        trunkColor,
+        leafColor
+      ) {
+        if (currentDepth === 0) {
+          // 가장 끝에 도달하면 나뭇잎(원)을 그림
+          ctx.beginPath();
+          ctx.arc(x1, y1, 3, 0, Math.PI * 2);
+          ctx.fillStyle = leafColor;
+          ctx.fill();
+          return;
         }
 
-        function drawBranch(x1, y1, angle, currentDepth, maxDepth, baseAngle, randomness, trunkColor, leafColor) {
-            if (currentDepth === 0) {
-                // 가장 끝에 도달하면 나뭇잎(원)을 그림
-                ctx.beginPath();
-                ctx.arc(x1, y1, 3, 0, Math.PI * 2);
-                ctx.fillStyle = leafColor;
-                ctx.fill();
-                return;
-            }
+        // 무작위성을 각도와 길이에 적용
+        const randomAngleFactor =
+          (Math.random() - 0.5) * baseAngle * randomness; // -0.5~0.5
+        const randomLengthFactor = 1 + (Math.random() - 0.5) * 0.5 * randomness; // 0.75~1.25
 
-            // 무작위성을 각도와 길이에 적용
-            const randomAngleFactor = (Math.random() - 0.5) * baseAngle * randomness;
-            const randomLengthFactor = 1 + (Math.random() - 0.5) * 0.5 * randomness;
-            
-            const length = currentDepth * 10 * randomLengthFactor;
-            const x2 = x1 + (Math.cos(angle * Math.PI / 180) * length);
-            const y2 = y1 + (Math.sin(angle * Math.PI / 180) * length);
+        // 가지 길이 계산 (깊이에 따라 짧아짐)
+        const length = currentDepth * 10 * randomLengthFactor;
+        // 끝점 좌표 계산
+        const x2 = x1 + Math.cos((angle * Math.PI) / 180) * length;
+        const y2 = y1 + Math.sin((angle * Math.PI) / 180) * length;
 
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            
-            // 줄기 색 설정
-            ctx.strokeStyle = trunkColor;
-            ctx.lineWidth = currentDepth * 0.8; // 두께 조절
-            ctx.stroke();
+        // 가지(줄기) 그리기
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = trunkColor;
+        ctx.lineWidth = currentDepth * 0.8; // 깊이에 따라 두께 조절
+        ctx.stroke();
 
-            // 다음 가지들을 재귀적으로 그림
-            drawBranch(x2, y2, angle - (baseAngle + randomAngleFactor), currentDepth - 1, maxDepth, baseAngle, randomness, trunkColor, leafColor);
-            drawBranch(x2, y2, angle + (baseAngle + randomAngleFactor), currentDepth - 1, maxDepth, baseAngle, randomness, trunkColor, leafColor);
-        }
+        // 왼쪽, 오른쪽 가지를 재귀적으로 그림
+        drawBranch(
+          x2,
+          y2,
+          angle - (baseAngle + randomAngleFactor),
+          currentDepth - 1,
+          maxDepth,
+          baseAngle,
+          randomness,
+          trunkColor,
+          leafColor
+        );
+        drawBranch(
+          x2,
+          y2,
+          angle + (baseAngle + randomAngleFactor),
+          currentDepth - 1,
+          maxDepth,
+          baseAngle,
+          randomness,
+          trunkColor,
+          leafColor
+        );
+      }
 
-        // 모든 컨트롤에 이벤트 리스너 추가
-        [depthSlider, angleSlider, randomnessSlider, trunkColorPicker, leafColorPicker].forEach(control => {
-            control.addEventListener('input', drawTree);
-        });
+      // 모든 컨트롤에 이벤트 리스너 추가 (값이 바뀔 때마다 트리 다시 그림)
+      [
+        depthSlider,
+        angleSlider,
+        randomnessSlider,
+        trunkColorPicker,
+        leafColorPicker,
+      ].forEach((control) => {
+        control.addEventListener("input", drawTree);
+      });
 
-        // 창 크기가 변경될 때 다시 그리기
-        window.addEventListener('resize', drawTree);
+      // 창 크기가 변경될 때 트리 다시 그림
+      window.addEventListener("resize", drawTree);
 
-        // 페이지 로드 시 첫 나무 그리기
-        drawTree();
+      // 페이지 로드 시 첫 나무 그리기
+      drawTree();
     </script>
-</body>
+  </body>
 </html>
